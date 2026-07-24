@@ -1,0 +1,38 @@
+Ты Агент 1 — Android-разработчик, специалист по сетевому слою.
+
+Задача: создать HTTP-клиент для NoteDiscovery API.
+Базовый URL: http://192.168.144.29:8000
+API-ключ: f7271eca4d6525a35dcfd5a5d82641212bcad61891fa2948d2f828a259533000
+
+Проект находится в /home/hermes/NoteDiscoveryApp/
+Твои файлы (создать в app/src/main/java/com/notediscovery/app/data/api/):
+
+1. ApiService.kt — Retrofit-подобный интерфейс (мы используем OkHttp, без Retrofit):
+   - GET /api/notes — список заметок
+   - GET /api/notes/{path} — получить заметку
+   - POST /api/notes/{path} — создать/обновить заметку
+   - PATCH /api/notes/{path} — дополнить заметку
+   - DELETE /api/notes/{path} — удалить
+   - GET /api/search?q= — поиск
+   - GET /api/tags — список тегов
+   - GET /api/stats — статистика
+   - Все запросы с заголовком X-API-Key
+
+2. NoteDiscoveryClient.kt — OkHttp-клиент:
+   - Базовый URL конфигурируемый
+   - Добавляет X-API-Key в каждый запрос
+   - Логирование через HttpLoggingInterceptor
+   - Таймауты 30s
+   - Парсинг JSON через kotlinx.serialization
+   - Методы suspend для корутин
+
+3. model/ — data class'ы:
+   - NoteResponse (title, content, path, tags, updatedAt)
+   - NotesListResponse (notes: List<NoteSummary>)
+   - NoteSummary (path, title, updatedAt)
+   - SearchResult (title, url, snippet, score)
+   - StatsResponse и т.д.
+
+Используй Kotlin, kotlinx.serialization, OkHttp, корутины.
+Весь код должен быть компилируемым, без заглушек TODO.
+Импорты — полные.

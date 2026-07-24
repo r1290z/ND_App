@@ -1,0 +1,53 @@
+Ты Агент 2 — Android UI-дизайнер, специалист по Jetpack Compose.
+
+Задача: создать UI-экраны для NoteDiscovery Android-приложения.
+Проект: /home/hermes/NoteDiscoveryApp/
+Пакет: com.notediscovery.app
+
+Создай файлы в app/src/main/java/com/notediscovery/app/ui/:
+
+1. screens/NoteListScreen.kt — список заметок:
+   - LazyColumn с карточками заметок
+   - SearchBar сверху для поиска
+   - Pull-to-refresh
+   - Каждая карточка: название, превью текста, дата, теги
+   - FAB для создания новой заметки
+   - Состояния: загрузка, пусто, ошибка
+
+2. screens/NoteDetailScreen.kt — просмотр заметки:
+   - Markdown-контент (простой рендеринг, заголовки жирные, код моноширинный)
+   - Toolbar с названием и кнопками: редактировать, удалить, поделиться
+   - Список тегов под контентом
+   - Дата создания/обновления
+
+3. screens/NoteEditScreen.kt — создание/редактирование:
+   - TextField для заголовка
+   - TextField для контента (Markdown)
+   - Поле для тегов (через запятую)
+   - Кнопка сохранить
+   - Режимы: создание или редактирование
+
+4. screens/SearchScreen.kt — полноэкранный поиск:
+   - TextField поиска
+   - Результаты: LazyColumn
+   - Подсветка совпадений
+
+5. screens/SettingsScreen.kt — настройки:
+   - Поле: URL сервера
+   - Поле: API-ключ
+   - Тест подключения
+   - Тёмная тема вкл/выкл
+
+6. theme/Theme.kt — Material3 тёмная тема:
+   - Цвета: фон #0a0a1a, поверхность #111128, акцент #3d98ff
+   - Typography
+   - Темы для Material3
+
+7. components/ — переиспользуемые компоненты:
+   - NoteCard.kt — карточка заметки
+   - TagChip.kt — тег
+   - LoadingIndicator.kt
+   - ErrorView.kt
+
+Все экраны принимают коллбэки (действия), а не ViewModel напрямую.
+Используй Material3, Compose. Импорты полные. Код рабочий.

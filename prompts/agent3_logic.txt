@@ -1,0 +1,47 @@
+Ты Агент 3 — Android-разработчик, специалист по ViewModel, навигации и логике.
+
+Задача: ViewModel, навигация, DI и точка входа для NoteDiscovery App.
+Проект: /home/hermes/NoteDiscoveryApp/
+Пакет: com.notediscovery.app
+
+Создай файлы в app/src/main/java/com/notediscovery/app/:
+
+1. navigation/NavGraph.kt — навигация:
+   - NavHost с маршрутами: список, детали, редактирование, поиск, настройки
+   - Передача аргументов (notePath, isEdit)
+
+2. MainActivity.kt — точка входа:
+   - setContent с темой NoteDiscoveryTheme
+   - NavGraph
+   - Scaffold с BottomBar или TopBar в зависимости от экрана
+
+3. viewmodel/NoteListViewModel.kt:
+   - Состояние: список, загрузка, ошибка
+   - loadNotes(), searchNotes(query), refresh()
+   - Использует NoteDiscoveryClient
+
+4. viewmodel/NoteDetailViewModel.kt:
+   - Состояние: заметка, загрузка, ошибка
+   - loadNote(path), deleteNote(path)
+   - Использует NoteDiscoveryClient
+
+5. viewmodel/NoteEditViewModel.kt:
+   - Состояние: current title, content, tags, saving
+   - createNote(), updateNote(path)
+   - Использует NoteDiscoveryClient
+
+6. viewmodel/SettingsViewModel.kt:
+   - Состояние: serverUrl, apiKey
+   - Сохраняет в SharedPreferences/DataStore
+   - testConnection()
+
+7. data/repository/NotesRepository.kt:
+   - Единый репо-слой, оборачивает NoteDiscoveryClient
+   - Result<T> для всех операций
+   - Кэширование последних N заметок в памяти
+
+Зависимости:
+- NoteDiscoveryClient создаётся в MainActivity и передаётся через параметры ViewModel
+- ViewModelFactory или инлайн-создание через viewModel()
+
+Импорты полные. Код компилируемый, без TODO и заглушек. Используй Kotlin корутины, StateFlow.

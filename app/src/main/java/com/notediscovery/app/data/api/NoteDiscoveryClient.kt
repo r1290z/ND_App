@@ -1,6 +1,8 @@
 package com.notediscovery.app.data.api
 
 import com.notediscovery.app.data.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -47,90 +49,109 @@ class NoteDiscoveryClient(
             .header("X-API-Key", apiKey)
     }
 
-    suspend fun getNotes(): Result<NotesResponse> = runCatching {
-        val request = requestBuilder("/api/notes").get().build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<NotesResponse>(body)
+    suspend fun getNotes(): Result<NotesResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = requestBuilder("/api/notes").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<NotesResponse>(body)
+        }
     }
 
-    suspend fun getNote(path: String): Result<NoteResponse> = runCatching {
-        val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
-        val request = requestBuilder("/api/notes/$encodedPath").get().build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<NoteResponse>(body)
+    suspend fun getNote(path: String): Result<NoteResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
+            val request = requestBuilder("/api/notes/$encodedPath").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<NoteResponse>(body)
+        }
     }
 
-    suspend fun createNote(path: String, content: String): Result<NoteResponse> = runCatching {
-        val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
-        val reqBody = json.encodeToString(SaveNoteRequest.serializer(), SaveNoteRequest(content))
-            .toRequestBody(mediaType)
-        val request = requestBuilder("/api/notes/$encodedPath").post(reqBody).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<NoteResponse>(body)
+    suspend fun createNote(path: String, content: String): Result<NoteResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
+            val reqBody = json.encodeToString(SaveNoteRequest.serializer(), SaveNoteRequest(content))
+                .toRequestBody(mediaType)
+            val request = requestBuilder("/api/notes/$encodedPath").post(reqBody).build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<NoteResponse>(body)
+        }
     }
 
-    suspend fun updateNote(path: String, content: String): Result<NoteResponse> = runCatching {
-        val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
-        val reqBody = json.encodeToString(SaveNoteRequest.serializer(), SaveNoteRequest(content))
-            .toRequestBody(mediaType)
-        val request = requestBuilder("/api/notes/$encodedPath").put(reqBody).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<NoteResponse>(body)
+    suspend fun updateNote(path: String, content: String): Result<NoteResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
+            val reqBody = json.encodeToString(SaveNoteRequest.serializer(), SaveNoteRequest(content))
+                .toRequestBody(mediaType)
+            val request = requestBuilder("/api/notes/$encodedPath").put(reqBody).build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<NoteResponse>(body)
+        }
     }
 
-    suspend fun deleteNote(path: String): Result<Unit> = runCatching {
-        val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
-        val request = requestBuilder("/api/notes/$encodedPath").delete().build()
-        client.newCall(request).execute()
-        Unit
+    suspend fun deleteNote(path: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
+            val request = requestBuilder("/api/notes/$encodedPath").delete().build()
+            client.newCall(request).execute()
+            Unit
+        }
     }
 
-    suspend fun appendNote(path: String, content: String, addTimestamp: Boolean = false): Result<NoteResponse> = runCatching {
-        val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
-        val reqBody = json.encodeToString(
-            AppendNoteRequest.serializer(),
-            AppendNoteRequest(content, addTimestamp)
-        ).toRequestBody(mediaType)
-        val request = requestBuilder("/api/notes/$encodedPath").patch(reqBody).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<NoteResponse>(body)
+    suspend fun appendNote(path: String, content: String, addTimestamp: Boolean = false): Result<NoteResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedPath = java.net.URLEncoder.encode(path, "UTF-8")
+            val reqBody = json.encodeToString(
+                AppendNoteRequest.serializer(),
+                AppendNoteRequest(content, addTimestamp)
+            ).toRequestBody(mediaType)
+            val request = requestBuilder("/api/notes/$encodedPath").patch(reqBody).build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<NoteResponse>(body)
+        }
     }
 
-    suspend fun search(query: String): Result<SearchResponse> = runCatching {
-        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-        val request = requestBuilder("/api/search?q=$encodedQuery").get().build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<SearchResponse>(body)
+    suspend fun search(query: String): Result<SearchResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+            val request = requestBuilder("/api/search?q=$encodedQuery").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<SearchResponse>(body)
+        }
     }
 
-    suspend fun getTags(): Result<TagListResponse> = runCatching {
-        val request = requestBuilder("/api/tags").get().build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<TagListResponse>(body)
+    suspend fun getTags(): Result<TagListResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = requestBuilder("/api/tags").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<TagListResponse>(body)
+        }
     }
 
-    suspend fun getStats(): Result<StatsResponse> = runCatching {
-        val request = requestBuilder("/api/stats").get().build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response")
-        json.decodeFromString<StatsResponse>(body)
+    suspend fun getStats(): Result<StatsResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = requestBuilder("/api/stats").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: throw Exception("Empty response")
+            json.decodeFromString<StatsResponse>(body)
+        }
     }
 
-    suspend fun testConnection(): Result<String> = runCatching {
-        val request = requestBuilder("/api/stats").get().build()
-        val response = client.newCall(request).execute()
-        if (response.isSuccessful) {
-            val body = response.body?.string() ?: ""
-            "OK (${response.code})"
-        } else {
-            throw Exception("HTTP ${response.code}: ${response.body?.string()}")
+    suspend fun testConnection(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = requestBuilder("/api/stats").get().build()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                "OK (${response.code})"
+            } else {
+                throw Exception("HTTP ${response.code}: ${response.body?.string()}")
+            }
         }
     }
 }

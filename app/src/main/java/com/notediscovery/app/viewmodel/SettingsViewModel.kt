@@ -32,21 +32,30 @@ class SettingsViewModel(
         val savedUrl = prefs.getString("server_url", null)
         val savedKey = prefs.getString("api_key", null)
         if (savedUrl != null && savedKey != null) {
-            _uiState.value = SettingsUiState(serverUrl = savedUrl, apiKey = savedKey)
-            repository.updateConfig(savedUrl, savedKey)
+            val fixedUrl = ensureHttpPrefix(savedUrl)
+            _uiState.value = SettingsUiState(serverUrl = fixedUrl, apiKey = savedKey)
+            repository.updateConfig(fixedUrl, savedKey)
         }
     }
 
     fun updateUrl(url: String) { _uiState.value = _uiState.value.copy(serverUrl = url) }
     fun updateKey(key: String) { _uiState.value = _uiState.value.copy(apiKey = key) }
 
+    private fun ensureHttpPrefix(url: String): String {
+        if (url.isBlank()) return url
+        return if (url.startsWith("http://") || url.startsWith("https://")) url
+        else "http://$url"
+    }
+
     fun save() {
         val state = _uiState.value
+        val fixedUrl = ensureHttpPrefix(state.serverUrl)
+        _uiState.value = state.copy(serverUrl = fixedUrl)
         prefs.edit()
-            .putString("server_url", state.serverUrl)
+            .putString("server_url", fixedUrl)
             .putString("api_key", state.apiKey)
             .apply()
-        repository.updateConfig(state.serverUrl, state.apiKey)
+        repository.updateConfig(fixedUrl, state.apiKey)
     }
 
     fun testConnection() {

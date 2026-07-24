@@ -60,7 +60,7 @@ class SettingsViewModel(
                 },
                 onFailure = { e ->
                     _uiState.value = _uiState.value.copy(
-                        isTesting = false, testResult = "❌ ${e.message}"
+                        isTesting = false, testResult = "❌ ${e.message ?: e.toString()}"
                     )
                 }
             )

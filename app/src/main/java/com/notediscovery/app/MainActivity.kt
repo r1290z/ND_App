@@ -26,10 +26,9 @@ class MainActivity : ComponentActivity() {
 
         val client = NoteDiscoveryClient(
             baseUrl = getSharedPreferences("settings", MODE_PRIVATE)
-                .getString("server_url", "http://192.168.144.29:8000") ?: "http://192.168.144.29:8000",
+                .getString("server_url", "") ?: "",
             apiKey = getSharedPreferences("settings", MODE_PRIVATE)
-                .getString("api_key", "f7271eca4d6525a35dcfd5a5d82641212bcad61891fa2948d2f828a259533000")
-                ?: "f7271eca4d6525a35dcfd5a5d82641212bcad61891fa2948d2f828a259533000"
+                .getString("api_key", "") ?: ""
         )
         val repository = NotesRepository(client)
 

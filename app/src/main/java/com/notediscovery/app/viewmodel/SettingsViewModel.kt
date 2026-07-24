@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
-    val serverUrl: String = "http://192.168.144.29:8000",
-    val apiKey: String = "f7271eca4d6525a35dcfd5a5d82641212bcad61891fa2948d2f828a259533000",
+    val serverUrl: String = "",
+    val apiKey: String = "",
     val testResult: String? = null,
     val isTesting: Boolean = false
 )

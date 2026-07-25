@@ -166,23 +166,19 @@ class MainActivity : ComponentActivity() {
                     .replace(Regex("\\s+"), "_").ifEmpty { "clip_${System.currentTimeMillis()}" }
 
                 val content = """
-                    |# $title
+                    |# 📥 $title
                     |
-                    |🔗 **Источник:** [$url]($url)
+                    |🔗 [$url]($url)
                     |
-                    |📅 **Сохранено:** $dateStr
-                    |
-                    |---
-                    |
-                    |_Поделились из браузера. Открой на компьютере чтобы прочитать._
+                    |📅 ${dateStr}
                 """.trimMargin()
 
-                val notePath = "Clipping/$safeTitle.md"
+                val notePath = "Inbox/$safeTitle.md"
                 val result = client.createNote(notePath, content)
 
                 result.fold(
                     onSuccess = {
-                        Toast.makeText(this@MainActivity, "📥 Сохранено: $title", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "📥 В Inbox: $title. Clipper обработает.", Toast.LENGTH_LONG).show()
                     },
                     onFailure = { e ->
                         Toast.makeText(this@MainActivity, "❌ Ошибка: ${e.message?.take(80)}", Toast.LENGTH_LONG).show()

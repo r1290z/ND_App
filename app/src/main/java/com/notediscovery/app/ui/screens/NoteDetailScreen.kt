@@ -2,6 +2,7 @@ package com.notediscovery.app.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll

@@ -154,4 +154,53 @@ class NoteDiscoveryClient(
             }
         }
     }
+
+    // === ACTIONS ===
+
+    suspend fun processInbox(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val reqBody = "{}".toRequestBody(mediaType)
+            val request = requestBuilder("/api/actions/process-inbox").post(reqBody).build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: "Empty response"
+            if (response.isSuccessful) {
+                val data = json.decodeFromString<Map<String, Any>>(body)
+                (data["output"] as? String) ?: (data["error"] as? String ?: body)
+            } else {
+                throw Exception("HTTP ${response.code}: ${body.take(200)}")
+            }
+        }
+    }
+
+    suspend fun reindex(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val reqBody = "{}".toRequestBody(mediaType)
+            val request = requestBuilder("/api/actions/reindex").post(reqBody).build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: "Empty response"
+            if (response.isSuccessful) {
+                val data = json.decodeFromString<Map<String, Any>>(body)
+                (data["output"] as? String) ?: (data["error"] as? String ?: body)
+            } else {
+                throw Exception("HTTP ${response.code}: ${body.take(200)}")
+            }
+        }
+    }
+
+    suspend fun checkVersion(): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = requestBuilder("/api/actions/version").get().build()
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: "Empty response"
+            if (response.isSuccessful) {
+                val data = json.decodeFromString<Map<String, Any>>(body)
+                val ver = (data["version"] as? String) ?: "?"
+                val msg = (data["message"] as? String) ?: ""
+                if (msg.isNotBlank()) "ℹ️ $msg"
+                else "✅ Текущая версия APK: #$ver"
+            } else {
+                throw Exception("HTTP ${response.code}: ${body.take(200)}")
+            }
+        }
+    }
 }

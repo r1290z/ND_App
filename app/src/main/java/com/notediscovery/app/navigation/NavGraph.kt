@@ -149,10 +149,15 @@ fun NavGraph(
                 apiKey = state.apiKey,
                 testResult = state.testResult,
                 isTesting = state.isTesting,
+                actionResult = state.actionResult,
+                isProcessing = state.isProcessing,
                 onUrlChange = { settingsViewModel.updateUrl(it) },
                 onKeyChange = { settingsViewModel.updateKey(it) },
                 onSave = { settingsViewModel.save() },
                 onTest = { settingsViewModel.testConnection() },
+                onProcessInbox = { settingsViewModel.processInbox() },
+                onReindex = { settingsViewModel.reindex() },
+                onCheckVersion = { settingsViewModel.checkVersion() },
                 onBack = { navController.popBackStack() }
             )
         }

@@ -15,7 +15,9 @@ data class SettingsUiState(
     val serverUrl: String = "",
     val apiKey: String = "",
     val testResult: String? = null,
-    val isTesting: Boolean = false
+    val isTesting: Boolean = false,
+    val actionResult: String? = null,
+    val isProcessing: Boolean = false
 )
 
 class SettingsViewModel(
@@ -61,17 +63,43 @@ class SettingsViewModel(
     fun testConnection() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isTesting = true, testResult = null)
-            repository.testConnection().fold(
-                onSuccess = { msg ->
-                    _uiState.value = _uiState.value.copy(
-                        isTesting = false, testResult = "✅ $msg"
-                    )
-                },
-                onFailure = { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isTesting = false, testResult = "❌ ${e.message ?: e.toString()}"
-                    )
-                }
+            val result = repository.client.testConnection()
+            _uiState.value = _uiState.value.copy(
+                isTesting = false,
+                testResult = if (result.isSuccess) "✅ ${result.getOrThrow()}" else "❌ ${result.exceptionOrNull()?.message}"
+            )
+        }
+    }
+
+    fun processInbox() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProcessing = true, actionResult = null)
+            val result = repository.client.processInbox()
+            _uiState.value = _uiState.value.copy(
+                isProcessing = false,
+                actionResult = if (result.isSuccess) "📥 Inbox:\n${result.getOrThrow()}" else "❌ ${result.exceptionOrNull()?.message}"
+            )
+        }
+    }
+
+    fun reindex() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProcessing = true, actionResult = null)
+            val result = repository.client.reindex()
+            _uiState.value = _uiState.value.copy(
+                isProcessing = false,
+                actionResult = if (result.isSuccess) "🔍 ${result.getOrThrow()}" else "❌ ${result.exceptionOrNull()?.message}"
+            )
+        }
+    }
+
+    fun checkVersion() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProcessing = true, actionResult = null)
+            val result = repository.client.checkVersion()
+            _uiState.value = _uiState.value.copy(
+                isProcessing = false,
+                actionResult = if (result.isSuccess) result.getOrThrow() else "❌ ${result.exceptionOrNull()?.message}"
             )
         }
     }

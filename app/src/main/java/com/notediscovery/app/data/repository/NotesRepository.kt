@@ -3,7 +3,7 @@ package com.notediscovery.app.data.repository
 import com.notediscovery.app.data.api.NoteDiscoveryClient
 import com.notediscovery.app.data.model.*
 
-class NotesRepository(private val client: NoteDiscoveryClient) {
+class NotesRepository(val client: NoteDiscoveryClient) {
 
     private var notesCache: List<NoteSummary> = emptyList()
     private var lastFetchTime = 0L

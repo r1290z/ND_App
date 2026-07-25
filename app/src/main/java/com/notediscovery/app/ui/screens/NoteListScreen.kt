@@ -1,28 +1,26 @@
 package com.notediscovery.app.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.notediscovery.app.data.model.NoteSummary
 
-data class FolderItem(
+data class FolderEntry(
     val name: String,
-    val notes: List<NoteSummary>,
-    val subfolders: Map<String, FolderItem> = emptyMap()
+    val noteCount: Int,
+    val subfolders: List<String> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,162 +35,159 @@ fun NoteListScreen(
     onCreateNote: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    // Group notes by folder
-    val folderStructure = remember(notes) { buildFolderStructure(notes) }
-    val rootNotes = remember(notes) { notes.filter { "/" !in it.path } }
+    val folders = remember(notes) { groupByFolder(notes) }
+    val currentFolder = remember { mutableStateOf<String?>(null) }
+    val breadcrumb = remember { mutableStateOf(listOf("NoteDiscovery")) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Search bar
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column {
+            // Top bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (currentFolder.value != null) {
+                    IconButton(onClick = {
+                        currentFolder.value = null
+                        breadcrumb.value = listOf("NoteDiscovery")
+                    }) {
+                        Icon(Icons.Default.ArrowBack, "Назад")
+                    }
+                }
+                Text(
+                    text = breadcrumb.value.last(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Search
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                placeholder = { Text("Поиск заметок...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Поиск...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                leadingIcon = { Icon(Icons.Default.Search, "Поиск") },
+                singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                singleLine = true
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
             )
 
+            Spacer(Modifier.height(12.dp))
+
             when {
-                isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(error, color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = onRefresh) { Text("Повторить") }
                     }
                 }
-                error != null -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(error, color = MaterialTheme.colorScheme.error)
-                            Spacer(Modifier.height(8.dp))
-                            TextButton(onClick = onRefresh) { Text("Повторить") }
-                        }
-                    }
-                }
-                notes.isEmpty() && folderStructure.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Нет заметок", style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                            Spacer(Modifier.height(4.dp))
-                            Text("Нажми + чтобы создать", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+                currentFolder.value == null -> {
+                    // Homepage: show folders as grid cards
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(folders, key = { it.name }) { folder ->
+                            FolderCard(
+                                folder = folder,
+                                onClick = {
+                                    currentFolder.value = folder.name
+                                    breadcrumb.value = breadcrumb.value + folder.name
+                                }
+                            )
                         }
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        // Root-level notes (no folder)
-                        if (rootNotes.isNotEmpty()) {
-                            item {
-                                Text("Корень",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
-                            }
-                            items(rootNotes, key = { it.path }) { note ->
-                                NoteCard(note = note, onClick = { onNoteClick(note) })
-                            }
-                        }
-
-                        // Folders
-                        folderStructure.forEach { (folderName, folder) ->
-                            item(key = "folder_$folderName") {
-                                FolderSection(
-                                    name = folderName,
-                                    folder = folder,
-                                    onNoteClick = onNoteClick
-                                )
-                            }
-                        }
+                    // Inside a folder: show notes list
+                    val folderNotes = remember(notes, currentFolder.value) {
+                        notes.filter { it.path.startsWith(currentFolder.value + "/") }
                     }
+                    FolderNotesList(folderNotes, onNoteClick)
                 }
             }
         }
 
         // FAB
-        FloatingActionButton(
-            onClick = onCreateNote,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Создать", tint = MaterialTheme.colorScheme.onPrimary)
+        if (currentFolder.value != null) {
+            FloatingActionButton(
+                onClick = onCreateNote,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Add, "Создать", tint = MaterialTheme.colorScheme.onPrimary)
+            }
         }
     }
 }
 
 @Composable
-fun FolderSection(
-    name: String,
-    folder: FolderItem,
-    onNoteClick: (NoteSummary) -> Unit,
-    depth: Int = 0
-) {
-    var expanded by remember { mutableStateOf(depth == 0) }
-
-    Column(modifier = Modifier.padding(start = (depth * 16).dp)) {
-        // Folder header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(vertical = 8.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+fun FolderCard(folder: FolderEntry, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
-                contentDescription = if (expanded) "Свернуть" else "Развернуть",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Default.Folder,
-                contentDescription = "Папка",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = folder.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Text(
-                text = name,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = "${folder.notes.size + folder.subfolders.size}",
-                style = MaterialTheme.typography.labelSmall,
+                text = "${folder.noteCount} заметк${if (folder.noteCount % 10 == 1 && folder.noteCount % 100 != 11) "а" else "и"}",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         }
+    }
+}
 
-        // Notes in this folder
-        AnimatedVisibility(visible = expanded) {
-            Column {
-                folder.notes.forEach { note ->
-                    NoteCard(note = note, onClick = { onNoteClick(note) },
-                        modifier = Modifier.padding(start = (depth * 16 + 8).dp))
-                }
-                // Subfolders
-                folder.subfolders.forEach { (subName, subFolder) ->
-                    FolderSection(
-                        name = subName,
-                        folder = subFolder,
-                        onNoteClick = onNoteClick,
-                        depth = depth + 1
+@Composable
+fun FolderNotesList(notes: List<NoteSummary>, onNoteClick: (NoteSummary) -> Unit) {
+    LazyColumn(contentPadding = PaddingValues(vertical = 4.dp)) {
+        items(notes, key = { it.path }) { note ->
+            NoteCardItem(note, onClick = { onNoteClick(note) })
+        }
+        if (notes.isEmpty()) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Папка пуста",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
             }
@@ -201,74 +196,58 @@ fun FolderSection(
 }
 
 @Composable
-fun NoteCard(note: NoteSummary, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    // Extract display name (filename without folder path)
+fun NoteCardItem(note: NoteSummary, onClick: () -> Unit) {
     val displayName = note.title.ifBlank {
         note.path.split("/").last().removeSuffix(".md").replace("_", " ")
     }
-    val folderPath = note.path.split("/").dropLast(1).joinToString("/")
-
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Description,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                modifier = Modifier.size(18.dp)
             )
-            if (note.updatedAt.isNotBlank()) {
-                Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = note.updatedAt.take(10),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    text = displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (note.updatedAt.isNotBlank()) {
+                    Text(
+                        text = note.updatedAt.take(10),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Build a nested folder structure from flat note list.
+ * Group notes by their top-level folder
  */
-fun buildFolderStructure(notes: List<NoteSummary>): Map<String, FolderItem> {
-    val folders = mutableMapOf<String, MutableList<NoteSummary>>()
-    val subfolderMap = mutableMapOf<String, MutableMap<String, MutableList<NoteSummary>>>()
-
+fun groupByFolder(notes: List<NoteSummary>): List<FolderEntry> {
+    val map = mutableMapOf<String, MutableList<NoteSummary>>()
     for (note in notes) {
         val parts = note.path.split("/")
-        if (parts.size >= 2) {
-            val rootFolder = parts[0]
-            if (parts.size == 2) {
-                // Direct child of root folder: Ai/note.md
-                folders.getOrPut(rootFolder) { mutableListOf() }.add(note)
-            } else {
-                // Nested: Общие/Проекты/note.md
-                val subPath = parts.drop(1).dropLast(1).joinToString("/")
-                val subKey = "$rootFolder/$subPath"
-                subfolderMap.getOrPut(rootFolder) { mutableMapOf() }
-                    .getOrPut(subKey) { mutableListOf() }.add(note)
-            }
+        val folder = if (parts.size >= 2) parts[0] else "_root"
+        map.getOrPut(folder) { mutableListOf() }.add(note)
+    }
+    return map.entries
+        .filter { it.key != "_root" }
+        .sortedBy { it.key.lowercase() }
+        .map { (name, notes) ->
+            FolderEntry(name = name, noteCount = notes.size)
         }
-    }
-
-    return folders.mapValues { (rootName, rootNotes) ->
-        val subs = subfolderMap[rootName] ?: emptyMap()
-        val subFolders = if (subs.isNotEmpty()) {
-            subs.mapKeys { it.key.removePrefix("$rootName/") }
-                .mapValues { (_, notes) ->
-                    FolderItem(name = notes.first().path.split("/").dropLast(1).last(), notes = notes)
-                }
-        } else emptyMap()
-        FolderItem(name = rootName, notes = rootNotes, subfolders = subFolders)
-    }
 }

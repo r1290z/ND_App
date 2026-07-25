@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 data class NoteListUiState(
     val notes: List<NoteSummary> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val searchQuery: String = ""
 )
@@ -43,7 +44,23 @@ class NoteListViewModel(
         }
     }
 
-    fun refresh() { loadNotes() }
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+            repository.getNotes(forceRefresh = true).fold(
+                onSuccess = { notes ->
+                    _uiState.value = _uiState.value.copy(
+                        notes = notes, isRefreshing = false, error = null
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isRefreshing = false, error = e.message ?: "Ошибка обновления"
+                    )
+                }
+            )
+        }
+    }
 
     fun search(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)

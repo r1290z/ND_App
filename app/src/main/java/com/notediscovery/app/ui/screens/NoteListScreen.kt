@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ data class FolderEntry(
 fun NoteListScreen(
     notes: List<NoteSummary>,
     isLoading: Boolean,
+    isRefreshing: Boolean = false,
     error: String?,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -41,7 +43,12 @@ fun NoteListScreen(
     val currentFolder = remember { mutableStateOf<String?>(null) }
     val breadcrumb = remember { mutableStateOf(listOf("NoteDiscovery")) }
 
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Column {
             // Top bar
             Row(

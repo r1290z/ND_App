@@ -46,6 +46,7 @@ fun NavGraph(
             NoteListScreen(
                 notes = state.notes,
                 isLoading = state.isLoading,
+                isRefreshing = state.isRefreshing,
                 error = state.error,
                 searchQuery = state.searchQuery,
                 onSearchQueryChange = { listViewModel.search(it) },
